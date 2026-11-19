@@ -69,10 +69,11 @@ function showAdult(selId){
       <h3>Öppna världar</h3><p class="note">Välj den värld ${esc(sel.name)} ska kunna börja i. Alla världar fram till och med den blir öppna. Värld 1–2 ≈ åk 1, värld 3–4 ≈ åk 2, värld 5–7 ≈ åk 3.</p>
       <div class="wbtns" id="wb">${worldsHtml}</div>
       ${resultsHTML(st)}
-      <div class="btns" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"><button class="btn secondary small" id="rst">Nollställ resultat</button><button class="btn secondary small" id="delk" style="background:#f6d0d0">Ta bort spelaren</button></div>`;
+      <div class="btns" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">${localLockOn() ? `<button class="btn secondary small" id="newlock">${sel.lock ? 'Ny bildkod' : 'Ingen bildkod vald än'}</button>` : ''}<button class="btn secondary small" id="rst">Nollställ resultat</button><button class="btn secondary small" id="delk" style="background:#f6d0d0">Ta bort spelaren</button></div>`;
   }
   app.innerHTML = `<div class="top"><button class="btn secondary small" id="back">← Till spelet</button><div class="grow"></div><button class="btn secondary small" id="backup">Spara säkerhetskopia</button><button class="btn secondary small" id="restore">Läs in säkerhetskopia</button><button class="btn secondary small" id="newcode">Byt vuxenkod</button><input type="file" id="bfile" accept=".json,application/json" hidden></div>
-    <div class="panel"><h2>Lärarvy</h2><p class="note">Fyren på Faros (värld 7) motsvarar kunskapskraven för godtagbara kunskaper i slutet av åk 3.</p>
+    <div class="panel"><h2>Lärarvy – den här datorn</h2><p class="note">Fyren på Faros (värld 7) motsvarar kunskapskraven för godtagbara kunskaper i slutet av åk 3.</p>
+    <label class="note" style="display:block;margin:4px 0 8px"><input type="checkbox" id="lockon" ${localLockOn()?'checked':''}> Barnen behöver sin bildkod för att öppna sin spelare (rekommenderas när flera barn delar datorn)</label>
     <div class="kids">${kids.map(k => `<button class="kid ${sel && k.id===sel.id?'on':''}" data-k="${k.id}">${avatarSVG(k.avatar,40)}${esc(k.name)}</button>`).join('')}</div>
     ${detail}</div>`;
   document.getElementById('back').onclick = showProfiles;
@@ -105,5 +106,9 @@ function showAdult(selId){
   const rst = document.getElementById('rst');
   if(rst) rst.onclick = () => { if(confirm(`Nollställ ${sel.name}s resultat i lärarvyn? Stjärnor och öppna rum påverkas inte.`)){ sel.stats = {}; saveStore(); showAdult(sel.id); } };
   const dk = document.getElementById('delk'); if(dk) dk.onclick = () => confirmDelete(sel.id);
+  const nl = document.getElementById('newlock');
+  if(nl) nl.onclick = () => { if(sel.lock && confirm(`Nollställ ${sel.name}s bildkod? ${sel.name} väljer nya bilder nästa gång.`)){ sel.lock = null; saveStore(); showAdult(sel.id); } };
+  const ll = document.getElementById('lockon');
+  if(ll) ll.onchange = () => { store.localLock = ll.checked; saveStore(); showAdult(sel && sel.id); };
   keyHandler = e => { if(e.key === 'Escape') showProfiles(); };
 }

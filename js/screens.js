@@ -4,7 +4,7 @@ function showProfiles(){
   player = null; setTheme('menu');
   const list = store.profiles.filter(p => !p.cloud).sort((a,b) => (b.last||0) - (a.last||0));
   const showLocal = !(cloudOn() && store.schoolOnly);
-  app.innerHTML = topbar((/^https?:/.test(location.protocol) ? '<a class="btn secondary small" href="../">← Alla spel</a>' : '') + '<button class="btn secondary small" id="adult">Vuxen</button>') + `<h1>Underverkens gåtor</h1><p class="center" style="font-size:1.4rem;font-weight:bold;color:#5a3a12;margin:0">Antikens sju underverk · Vem spelar idag?</p>
+  app.innerHTML = topbar((/^https?:/.test(location.protocol) && location.pathname.replace(/index\.html$/, '') !== '/' ? '<a class="btn secondary small" href="../">← Alla spel</a>' : '') + '<button class="btn secondary small" id="adult">Vuxen</button>') + `<h1>Underverkens gåtor</h1><p class="center" style="font-size:1.4rem;font-weight:bold;color:#5a3a12;margin:0">Antikens sju underverk · Vem spelar idag?</p>
     ${classSectionHTML()}
     ${showLocal ? `${cloudOn() ? '<h2 class="localhead">På den här datorn</h2>' : ''}<div class="profiles">${list.map(p => {
       const c = curWorld(p), done = (p.progress && p.progress.faros && p.progress.faros.done >= roomCount(6));
@@ -13,8 +13,8 @@ function showProfiles(){
     ${list.length < 40 ? '<button class="pcard new" id="newp"><span class="plus">+</span>Ny spelare</button>' : ''}</div>` : ''}`;
   wireTop();
   app.querySelectorAll('.pcard[data-id]').forEach(b => b.onclick = () => {
-    player = store.profiles.find(p => p.id === b.dataset.id); player.last = Date.now(); saveStore(); sfx.click();
-    showMap(curWorld(player).w);
+    const p = store.profiles.find(x => x.id === b.dataset.id); sfx.click();
+    if(p) openLocalProfile(p);
   });
   app.querySelectorAll('[data-del]').forEach(b => b.onclick = () => askCode(() => confirmDelete(b.dataset.del), 'Ta bort en spelare'));
   document.getElementById('newp') && (document.getElementById('newp').onclick = showNewProfile);
@@ -49,8 +49,9 @@ function showNewProfile(){
   nm.oninput = () => go.disabled = !nm.value.trim();
   const create = () => {
     const name = nm.value.trim(); if(!name){ nm.focus(); return; }
-    player = {id:'p'+Date.now().toString(36)+rnd(100,999), name, avatar:av, progress:{}, stats:{}, unlocked:0, seen:{}, created:Date.now(), last:Date.now()};
-    store.profiles.push(player); saveStore(); sfx.ok(); showMap(0);
+    const p = {id:'p'+Date.now().toString(36)+rnd(100,999), name, avatar:av, progress:{}, stats:{}, unlocked:0, seen:{}, created:Date.now(), last:Date.now()};
+    const start = () => { store.profiles.push(p); player = p; saveStore(); sfx.ok(); showMap(0); };
+    if(localLockOn()) chooseLock(p, start, () => {}); else start();
   };
   go.onclick = create;
   document.getElementById('back').onclick = showProfiles;
